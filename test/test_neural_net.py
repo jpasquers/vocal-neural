@@ -1,6 +1,6 @@
 import unittest
 from src.neural_net import NeuralNet
-import numpy.ndenumerate as ndenumerate
+from numpy import ndenumerate
 
 class TestNeuralNet(unittest.TestCase):
 

@@ -15,6 +15,7 @@ class NeuralNet():
         self.EPSILON = epsilon
         self.layer_lengths = layer_lengths
         self.num_layers = len(self.layer_lengths)
+        self.learning_rate = learning_rate
         #index of the last layer
         self.L = self.num_layers - 1
         self.lmbda = lmbda
@@ -95,14 +96,14 @@ class NeuralNet():
             if i == self.L:
                 continue
             next_layer_length = self.layer_lengths[i+1]
-            self.deltas.append(np.zeros([next_layer_length, layer_length+1]))
+            self.Ds.append(np.zeros([next_layer_length, layer_length+1]))
 
     def prepend_one(self, col_vec):
         """
         Prepends a 1 to the top of any column vector
         effectively - ret = [1; col_vec]
         """
-        return np.insert(col_vec,[0,0], 1,axis=0)
+        return np.insert(col_vec,0, np.array([[1]]),axis=0)
 
     def forward_prop(self,sample_x):
         """
@@ -111,7 +112,6 @@ class NeuralNet():
         """
         self.alphas[0] = self.prepend_one(sample_x)
         for i in range(0,len(self.layer_lengths)-1):
-            layer_length = self.layer_lengths[i]
             self.zs[i+1] = np.dot(self.thetas[i],self.alphas[i])
             temp_alpha = expit(self.zs[i+1])
             #Dont add bias term for last element
@@ -125,7 +125,7 @@ class NeuralNet():
         Will fail if forward_prop hasn't been performed
         """
         self.ds[self.L] = np.subtract(self.alphas[self.L],sample_y)
-        for i in range(L-1,-1,-1):
+        for i in range(self.L-1,-1,-1):
             # d(l) = ((theta(l)' * d(l+1)) .* g'(a(l)))[2:end]
             self.ds[i] = np.multiply(np.dot(np.transpose(self.thetas[i]),self.ds[i+1]),self.d_expit_array(self.alphas[i]))[1:,:]
         for i in range(0,self.L-1):
@@ -143,18 +143,36 @@ class NeuralNet():
             print("inequal sample sizes for input and outputs")
             sys.exit()
         for i in range(0,num_iterations):
+            print("starting iteration: " + str(i))
             self.reset_per_iteration()
             self.train_iteration(X,Y)
 
     def train_iteration(self,X,Y):
         m = X.shape[1]
+        totalErr = 0
         for i in range(0,m):
             self.reset_per_sample()
-            self.train_sample(X[:,i], Y[:,i])
+            self.train_sample(X[:,[i]], Y[:,[i]])
+            totalErr = totalErr + self.error(self.alphas[self.L], Y[:,[i]])
+        print("error is: " + str(totalErr))
         for i in range(0,self.L):
             self.Ds[i] = np.add((1/m) * self.deltas[i], self.lmbda * self.thetas[i])
 
         #TODO some function that takes in theta and dJ/dTheta and gives the new theta
+        #for now, do a simple change of dJ/dtheta * learning_rate. Eventually convert
+        #to a more sophisticated gradient descent algorithm
+        for i in range(0,self.L):
+            self.thetas[i] = np.subtract(self.thetas[i], self.learning_rate * self.Ds[i])
+
+    def get_outcome(self, sample_x):
+        """
+        performs forward propogation given the current set of thetas.
+        """
+        #So at some point these need to be put in separate classes.
+        #Having all of this in one spot is a nightmare
+        self.reset_per_sample()
+        self.forward_prop(sample_x)
+        return self.alphas[self.L]
     
     def train_sample(self, sample_x, sample_y):
         """
