@@ -1,4 +1,4 @@
-from sample import Sample
+from src.sample import Sample
 import numpy as np
 
 class Iteration():

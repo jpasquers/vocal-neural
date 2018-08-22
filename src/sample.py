@@ -64,6 +64,12 @@ class Sample():
         This is brought into its own method to allow for overriding
         """
         return expit(val)
+    
+    def d_activation_fn_single(self,val):
+        return self.d_expit_single(val)
+    
+    def d_activation_fn_array(self,val):
+        return self.d_expit_array(val)
 
     def forward_prop(self):
         """
@@ -87,7 +93,7 @@ class Sample():
         self.ds[self.L] = np.subtract(self.alphas[self.L],self.sample_y)
         for i in range(self.L-1,-1,-1):
             # d(l) = ((theta(l)' * d(l+1)) .* g'(a(l)))[2:end]
-            g_prime = self.d_expit_array(self.alphas[i])
+            g_prime = self.d_activation_fn_array(self.alphas[i])
             dE_da = np.dot(np.transpose(self.weights.get_layer(i)),self.ds[i+1])
             self.ds[i] = np.multiply(dE_da,g_prime)[1:,:]
         

@@ -1,8 +1,8 @@
 import numpy as np
 import random
-from weights import Weights
-from sample import Sample
-from iteration import Iteration
+from src.weights import Weights
+from src.sample import Sample
+from src.iteration import Iteration
 import sys
 
 class NeuralNet():
