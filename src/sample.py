@@ -71,6 +71,9 @@ class Sample():
     def d_activation_fn_array(self,val):
         return self.d_expit_array(val)
 
+    def d_error_d_alpha(self,y,a):
+        return np.subtract(y,a)
+
     def forward_prop(self):
         """
         sample_x is an an individual
@@ -90,7 +93,7 @@ class Sample():
         """
         Will fail if forward_prop hasn't been performed
         """
-        self.ds[self.L] = np.subtract(self.alphas[self.L],self.sample_y)
+        self.ds[self.L] = self.d_error_d_alpha(self.sample_y,self.alphas[self.L]) * self.d_activation_fn_array(self.alphas[self.L])
         for i in range(self.L-1,-1,-1):
             # d(l) = ((theta(l)' * d(l+1)) .* g'(a(l)))[2:end]
             g_prime = self.d_activation_fn_array(self.alphas[i])
