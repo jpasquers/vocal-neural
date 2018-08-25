@@ -29,6 +29,12 @@ class NeuralNet():
         X = self.layer_lengths[0] x m ndarray
         Y = self.layer_lengths[self.L] x m ndarray
         """
+        if self.layer_lengths[0] != X.shape[0]:
+            print("num features (" + X.shape[0] + ") does not match input layer_lengths[0] (" + self.layer_lengths[0] +")")
+            sys.exit()
+        if self.layer_lengths[self.L] != Y.shape[0]:
+            print("output layers don't match (" + Y.shape[0] + ") and (" + self.layer_lengths[self.L] +")")
+            sys.exit()
         if X.shape[1] != Y.shape[1]:
             #TODO proper error checking
             print("inequal sample sizes for input and outputs")

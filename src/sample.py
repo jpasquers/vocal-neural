@@ -1,8 +1,9 @@
 import numpy as np
-from scipy.special import expit
 
 class Sample():
-    def __init__(self, weights, sample_x, sample_y):
+    def __init__(self, activation, error_calculator, weights, sample_x, sample_y):
+        self.activation = activation
+        self.error_calculator
         self.weights = weights
         self.layer_lengths = self.weights.layer_lengths
         self.num_layers = len(self.layer_lengths)
@@ -59,30 +60,15 @@ class Sample():
         """
         return np.insert(col_vec,0, np.array([[1]]),axis=0)
 
-    def activation_fn(self,val):
-        """
-        This is brought into its own method to allow for overriding
-        """
-        return expit(val)
-    
-    def d_activation_fn_single(self,val):
-        return self.d_expit_single(val)
-    
-    def d_activation_fn_array(self,val):
-        return self.d_expit_array(val)
-
-    def d_error_d_alpha(self,y,a):
-        return np.subtract(y,a)
-
     def forward_prop(self):
         """
-        sample_x is an an individual
+        sample_x is an individual sample
         sample_x = layer_lengths[0] x 1 ndarray
         """
         self.alphas[0] = self.prepend_one(self.sample_x)
-        for i in range(0,len(self.layer_lengths)-1):
+        for i in range(0,self.L):
             self.zs[i+1] = np.dot(self.weights.get_layer(i),self.alphas[i])
-            temp_alpha = self.activation_fn(self.zs[i+1])
+            temp_alpha = self.activation.fn_array(self.zs[i+1])
             #Dont add bias term for last element
             if i+1 == self.L:
                 self.alphas[i+1] = temp_alpha
@@ -92,29 +78,19 @@ class Sample():
     def back_prop(self):
         """
         Will fail if forward_prop hasn't been performed
+        This method should not be directly invoked. use calc_sample_deltas instead
         """
-        self.ds[self.L] = self.d_error_d_alpha(self.sample_y,self.alphas[self.L]) * self.d_activation_fn_array(self.alphas[self.L])
+        dE_da = self.error_calculator.d_last_layer_error(self.sample_y, self.alphas[self.L])
+        self.ds[self.L] = np.multiply(dE_da,self.activation.d_fn_array(self.alphas[self.L]))
         for i in range(self.L-1,-1,-1):
             # d(l) = ((theta(l)' * d(l+1)) .* g'(a(l)))[2:end]
-            g_prime = self.d_activation_fn_array(self.alphas[i])
+            g_prime = self.activation.d_fn_array(self.alphas[i])
             dE_da = np.dot(np.transpose(self.weights.get_layer(i)),self.ds[i+1])
             self.ds[i] = np.multiply(dE_da,g_prime)[1:,:]
         
         for i in range(0,self.L):
             # delta(l) = d(l+1)*a(l)'
             self.deltas[i] = np.dot(self.ds[i+1], np.transpose(self.alphas[i]))
-
-    def d_expit_single(self, input):
-        """
-        derivative calculation of sigmoid function for single input
-        """
-        return expit(input) * (1 - expit(input))
-    
-    def d_expit_array(self,input):
-        """
-        elementy by element derivative calculation of sigmoid function 
-        """
-        return np.multiply(expit(input), (1-expit(input)))
 
 
     def calc_sample_deltas(self):
